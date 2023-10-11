@@ -45,18 +45,18 @@
       </Column>
       <Column field="name" sortable header="Name">
         <template #body="slotProps">
-          <span v-html="highlightName(slotProps.data.name)"></span>
+          <span v-html="highlightText(slotProps.data.name)"></span>
         </template>
       </Column>
 
       <Column field="region" sortable header="Region">
         <template #body="slotProps">
-          <span v-html="highlightRegion(slotProps.data.region)"></span>
+          <span v-html="highlightText(slotProps.data.region)"></span>
         </template>
       </Column>
       <Column field="capital" sortable header="Capital">
         <template #body="slotProps">
-          <span v-html="highlightCapital(slotProps.data.capital)"></span>
+          <span v-html="highlightText(slotProps.data.capital)"></span>
         </template>
       </Column>
     </DataTable>
@@ -79,9 +79,7 @@ export default defineComponent({
   name: "App",
   setup() {
     return {
-      storedArray: [] as Favourite[],
-
-      selectedCountry: ref(),
+      storedFavourite: [] as Favourite[],
       metaKey: ref(true),
       filters: ref({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -111,10 +109,10 @@ export default defineComponent({
   },
   methods: {
     async fetchUsers() {
-      const user = await axios.get<any[]>("https://restcountries.com/v3.1/all");
-      var data = user.data;
+      const list = await axios.get<any[]>("https://restcountries.com/v3.1/all");
+      var data = list.data;
 
-      const newJsonData = data.map((dataItem, index) => {
+      const countryList = data.map((dataItem, index) => {
         var capital = dataItem.capital;
         if (Array.isArray(capital)) {
           capital = capital.join(", ");
@@ -130,56 +128,55 @@ export default defineComponent({
           flag: dataItem.flags.png,
         };
       }) as Country[];
-      // newJsonData.sort((a, b) => a.name.localeCompare(b.name));
 
-      this.countries = this.compareList(this.storedArray, newJsonData);
+      this.countries = this.compareList(this.storedFavourite, countryList);
     },
     compareList(favouriteList: Favourite[], listStorage: Country[]) {
       return listStorage.map((list_2: any) => {
         const match = favouriteList.find((list_1) => list_1.id === list_2.id);
         if (match) {
           return { ...list_2, favourite: match.favourite };
-        } else if (match == undefined) {
+        } else {
           return list_2;
         }
       });
     },
     getFavouriteList() {
       const storedData = localStorage.getItem("favouriteList");
-      this.storedArray = [];
+      this.storedFavourite = [];
 
       if (storedData) {
         var data = JSON.parse(storedData);
         if (data.length > 1) {
-          this.storedArray = data.map((item: any) => {
+          this.storedFavourite = data.map((item: any) => {
             return {
               id: item.id,
               favourite: item.favourite,
             };
           });
-          console.log(this.storedArray);
         } else if (data.length == 0) {
-          this.storedArray.push(data);
+          this.storedFavourite.push(data);
         }
       }
     },
 
     clearFav() {
       localStorage.removeItem("favouriteList");
-      this.storedArray = [];
-      console.log(this.filters["global"]);
+      this.storedFavourite = [];
+      this.fetchUsers();
     },
     saveLocalFav(store: any) {
       localStorage.setItem("favouriteList", JSON.stringify(store));
     },
-    async removeFromFav(id: number) {
-      const index = this.storedArray.findIndex((element) => element.id === id);
+    removeFromFav(id: number) {
+      const index = this.storedFavourite.findIndex(
+        (element) => element.id === id
+      );
       if (index !== -1) {
-        // const data = this.storedArray[index];
-        this.storedArray.splice(index, 1);
-        var length = this.storedArray.length;
+        this.storedFavourite.splice(index, 1);
+        var length = this.storedFavourite.length;
         if (length >= 1) {
-          this.saveLocalFav(this.storedArray);
+          this.saveLocalFav(this.storedFavourite);
         } else {
           this.clearFav();
         }
@@ -187,7 +184,7 @@ export default defineComponent({
         console.log("Error Remove From Favourite");
       }
     },
-    async addToFavourite(id: number, value: boolean) {
+    addToFavourite(id: number, value: boolean) {
       const data = this.countries.find((item) => item.id === id);
 
       if (data) {
@@ -197,12 +194,8 @@ export default defineComponent({
             id: id,
             favourite: data.favourite,
           };
-
-          this.storedArray.push(saveFav);
-          this.saveLocalFav(this.storedArray);
-
-          console.log(this.storedArray);
-          // }
+          this.storedFavourite.push(saveFav);
+          this.saveLocalFav(this.storedFavourite);
         } else if (value == true) {
           data.favourite = false;
           this.removeFromFav(id);
@@ -210,7 +203,6 @@ export default defineComponent({
       } else if (!data) {
         console.log("Error Add To Favourite");
       }
-      console.log(data?.favourite);
     },
 
     highlightText(text: string) {
@@ -218,30 +210,10 @@ export default defineComponent({
       if (!value) return text;
       const regex = new RegExp(value, "gi");
 
-      return text.replace(
-        regex,
-        (match) => `<span class="highlight">${match}</span>`
-      );
-    },
-    highlightCapital(text: string) {
-      let value = this.filters["global"].value;
-
-      if (!value) return text;
-      const regex = new RegExp(value, "gi");
-
       return text?.replace(
         regex,
         (match) => `<span class="highlight">${match}</span>`
       );
-    },
-    highlightName(rowData: any) {
-      return this.highlightText(rowData);
-    },
-    highlightRegion(rowData: any) {
-      return this.highlightText(rowData);
-    },
-    escapeRegExp(string: string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     },
   },
   mounted() {
