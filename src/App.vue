@@ -61,6 +61,15 @@
       </Column>
     </DataTable>
   </div>
+
+  <div class="chart" v-if="chartData">
+    <Chart
+      type="bar"
+      :data="chartData"
+      :options="chartOptions"
+      class="h-30rem"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -80,6 +89,8 @@ export default defineComponent({
   setup() {
     return {
       storedFavourite: [] as Favourite[],
+      chartData: ref(),
+      chartOptions: ref(),
       metaKey: ref(true),
       filters: ref({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -126,6 +137,7 @@ export default defineComponent({
           region: dataItem.region,
           capital: capital,
           flag: dataItem.flags.png,
+          population: dataItem.population,
         };
       }) as Country[];
 
@@ -144,7 +156,6 @@ export default defineComponent({
     getFavouriteList() {
       const storedData = localStorage.getItem("favouriteList");
       this.storedFavourite = [];
-
       if (storedData) {
         var data = JSON.parse(storedData);
         if (data.length > 1) {
@@ -152,11 +163,14 @@ export default defineComponent({
             return {
               id: item.id,
               favourite: item.favourite,
+              population: item.population,
+              name: item.name,
             };
           });
-        } else if (data.length == 0) {
+        } else {
           this.storedFavourite.push(data);
         }
+        this.chartData = this.setChartData(this.storedFavourite);
       }
     },
 
@@ -164,6 +178,7 @@ export default defineComponent({
       localStorage.removeItem("favouriteList");
       this.storedFavourite = [];
       this.fetchUsers();
+      this.chartData = null;
     },
     saveLocalFav(store: any) {
       localStorage.setItem("favouriteList", JSON.stringify(store));
@@ -186,19 +201,22 @@ export default defineComponent({
     },
     addToFavourite(id: number, value: boolean) {
       const data = this.countries.find((item) => item.id === id);
-
       if (data) {
         if (value == false) {
           data.favourite = true;
           var saveFav = {
             id: id,
             favourite: data.favourite,
+            population: data.population,
+            name: data.name,
           };
           this.storedFavourite.push(saveFav);
           this.saveLocalFav(this.storedFavourite);
-        } else if (value == true) {
+          this.chartData = this.setChartData(this.storedFavourite);
+        } else {
           data.favourite = false;
           this.removeFromFav(id);
+          this.chartData = this.setChartData(this.storedFavourite);
         }
       } else if (!data) {
         console.log("Error Add To Favourite");
@@ -215,10 +233,84 @@ export default defineComponent({
         (match) => `<span class="highlight">${match}</span>`
       );
     },
+    setChartData(data: Favourite[]) {
+      const documentStyle = getComputedStyle(document.documentElement);
+
+      var labelChart = [];
+      var labelData = [];
+      if (data.length == 0) {
+        labelChart.push(data);
+        labelData.push(data);
+      } else {
+        labelChart = data.map((item) => {
+          return item.name;
+        });
+        labelData = data.map((item) => {
+          return item.population;
+        });
+      }
+
+      return {
+        labels: labelChart,
+        datasets: [
+          {
+            label: "Country Population",
+            backgroundColor: documentStyle.getPropertyValue("--blue-500"),
+            borderColor: documentStyle.getPropertyValue("--blue-500"),
+            data: labelData,
+          },
+        ],
+      };
+    },
+    setChartOptions() {
+      const documentStyle = getComputedStyle(document.documentElement);
+      const textColor = documentStyle.getPropertyValue("--text-color");
+      const textColorSecondary = documentStyle.getPropertyValue(
+        "--text-color-secondary"
+      );
+      const surfaceBorder = documentStyle.getPropertyValue("--surface-border");
+
+      return {
+        indexAxis: "y",
+        maintainAspectRatio: false,
+        aspectRatio: 0.5,
+        plugins: {
+          legend: {
+            labels: {
+              fontColor: textColor,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: textColorSecondary,
+              font: {
+                weight: 500,
+              },
+            },
+            grid: {
+              display: false,
+              drawBorder: false,
+            },
+          },
+          y: {
+            ticks: {
+              color: textColorSecondary,
+            },
+            grid: {
+              color: surfaceBorder,
+              drawBorder: false,
+            },
+          },
+        },
+      };
+    },
   },
   mounted() {
     this.getFavouriteList();
     this.fetchUsers();
+    this.chartOptions = this.setChartOptions();
   },
 });
 </script>
@@ -230,5 +322,9 @@ img.w-6rem.shadow-2.border-round {
 
 .highlight {
   background-color: yellow;
+}
+
+.chart {
+  margin: 5rem 0;
 }
 </style>

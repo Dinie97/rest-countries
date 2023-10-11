@@ -5,9 +5,12 @@ export interface Country {
   region: string;
   capital: string;
   flag: string;
+  population: number;
 }
 
 export interface Favourite {
   id: number;
   favourite: boolean;
+  population: number;
+  name: string;
 }
