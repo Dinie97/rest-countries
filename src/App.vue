@@ -1,5 +1,6 @@
 <template>
   <div class="card">
+    <!-- DataTable for displaying a list of countries -->
     <DataTable
       :value="countries"
       :paginator="true"
@@ -25,7 +26,9 @@
           </span>
         </div>
       </template>
+      <!-- Columns for displaying data -->
       <Column field="favourite" header="Favourite">
+        <!-- Checkbox to add and remove a country as a favorite, can also be use to see the population -->
         <template #body="slotProps">
           <Checkbox
             v-model="slotProps.data.favourite"
@@ -44,17 +47,20 @@
         </template>
       </Column>
       <Column field="name" sortable header="Name">
+        <!-- Display country name with highlighted search text -->
         <template #body="slotProps">
           <span v-html="highlightText(slotProps.data.name)"></span>
         </template>
       </Column>
 
       <Column field="region" sortable header="Region">
+        <!-- Display country name with highlighted search text -->
         <template #body="slotProps">
           <span v-html="highlightText(slotProps.data.region)"></span>
         </template>
       </Column>
       <Column field="capital" sortable header="Capital">
+        <!-- Display country name with highlighted search text -->
         <template #body="slotProps">
           <span v-html="highlightText(slotProps.data.capital)"></span>
         </template>
@@ -62,7 +68,9 @@
     </DataTable>
   </div>
 
+  <!-- Chart container, only display the chart if have favourite list -->
   <div class="chart" v-if="chartData">
+    <!-- Chart component to display population data -->
     <Chart
       type="bar"
       :data="chartData"
@@ -88,6 +96,7 @@ export default defineComponent({
   name: "App",
   setup() {
     return {
+      // Initialize reactive variables
       storedFavourite: [] as Favourite[],
       chartData: ref(),
       chartOptions: ref(),
@@ -108,10 +117,12 @@ export default defineComponent({
   },
   data() {
     return {
+      // Initialize the countries data property
       countries: [] as Country[],
     };
   },
   components: {
+    // Register components for use in the template
     DataTable,
     Column,
     InputText,
@@ -119,10 +130,11 @@ export default defineComponent({
     Button,
   },
   methods: {
-    async fetchUsers() {
+    // Method to fetch a list of countries
+    async getCountryList() {
       const list = await axios.get<any[]>("https://restcountries.com/v3.1/all");
       var data = list.data;
-
+      // Process the received data and map it to the countries data property
       const countryList = data.map((dataItem, index) => {
         var capital = dataItem.capital;
         if (Array.isArray(capital)) {
@@ -143,6 +155,7 @@ export default defineComponent({
 
       this.countries = this.compareList(this.storedFavourite, countryList);
     },
+    // Method to compare the list of favorite countries with the list of country
     compareList(favouriteList: Favourite[], listStorage: Country[]) {
       return listStorage.map((list_2: any) => {
         const match = favouriteList.find((list_1) => list_1.id === list_2.id);
@@ -153,6 +166,7 @@ export default defineComponent({
         }
       });
     },
+    // Method to retrieve the list of favorite countries from local storage
     getFavouriteList() {
       const storedData = localStorage.getItem("favouriteList");
       this.storedFavourite = [];
@@ -173,16 +187,18 @@ export default defineComponent({
         this.chartData = this.setChartData(this.storedFavourite);
       }
     },
-
+    // Method to clear the list of favorite countries
     clearFav() {
       localStorage.removeItem("favouriteList");
       this.storedFavourite = [];
-      this.fetchUsers();
+      this.getCountryList();
       this.chartData = null;
     },
+    // Method to save the list of favorite countries to local storage
     saveLocalFav(store: any) {
       localStorage.setItem("favouriteList", JSON.stringify(store));
     },
+    // Method to remove a country from the list of favorites
     removeFromFav(id: number) {
       const index = this.storedFavourite.findIndex(
         (element) => element.id === id
@@ -199,6 +215,7 @@ export default defineComponent({
         console.log("Error Remove From Favourite");
       }
     },
+    // Method to add a country to the favourite
     addToFavourite(id: number, value: boolean) {
       const data = this.countries.find((item) => item.id === id);
       if (data) {
@@ -222,7 +239,7 @@ export default defineComponent({
         console.log("Error Add To Favourite");
       }
     },
-
+    // Method to highlight text that match with the search input text
     highlightText(text: string) {
       var value = this.filters["global"].value;
       if (!value) return text;
@@ -233,6 +250,8 @@ export default defineComponent({
         (match) => `<span class="highlight">${match}</span>`
       );
     },
+
+    // Method to prepare chart data from a list of favorite countries
     setChartData(data: Favourite[]) {
       const documentStyle = getComputedStyle(document.documentElement);
 
@@ -262,6 +281,7 @@ export default defineComponent({
         ],
       };
     },
+    // Method to set chart options for the population chart
     setChartOptions() {
       const documentStyle = getComputedStyle(document.documentElement);
       const textColor = documentStyle.getPropertyValue("--text-color");
@@ -308,8 +328,11 @@ export default defineComponent({
     },
   },
   mounted() {
+    // retrieve the list of favorite countries from local storage
     this.getFavouriteList();
-    this.fetchUsers();
+    // fetch the list of countries from an external API
+    this.getCountryList();
+    // Set chart options for the population chart
     this.chartOptions = this.setChartOptions();
   },
 });
