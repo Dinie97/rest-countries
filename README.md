@@ -62,6 +62,3 @@ The app's structure consists of Vue.js components, including a DataTable for dis
 
 - **Population Chart**: Displays a bar chart of the population of favorite countries.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
