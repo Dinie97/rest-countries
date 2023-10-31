@@ -97,7 +97,8 @@ export default defineComponent({
   setup() {
     return {
       // Initialize reactive variables
-      storedFavourite: [] as Favourite[],
+      countries: ref([] as Country[]),
+      storedFavourite: ref([] as Favourite[]),
       chartData: ref(),
       chartOptions: ref(),
       metaKey: ref(true),
@@ -115,20 +116,7 @@ export default defineComponent({
       }),
     };
   },
-  data() {
-    return {
-      // Initialize the countries data property
-      countries: [] as Country[],
-    };
-  },
-  components: {
-    // Register components for use in the template
-    DataTable,
-    Column,
-    InputText,
-    Checkbox,
-    Button,
-  },
+  components: {},
   methods: {
     // Method to fetch a list of countries
     async getCountryList() {
@@ -137,10 +125,9 @@ export default defineComponent({
       // Process the received data and map it to the countries data property
       const countryList = data.map((dataItem, index) => {
         var capital = dataItem.capital;
+
         if (Array.isArray(capital)) {
           capital = capital.join(", ");
-        } else {
-          console.log("Invalid capital data:", capital);
         }
         return {
           id: index,
