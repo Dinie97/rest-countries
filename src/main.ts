@@ -12,6 +12,7 @@ import OrganizationChart from "primevue/organizationchart";
 import Chart from "primevue/chart";
 
 import "primeicons/primeicons.css";
+import Checkbox from "primevue/checkbox";
 
 const app = createApp(App);
 
@@ -21,6 +22,7 @@ app.component("Button", Button);
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("InputText", InputText);
+app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("OrganizationChart", OrganizationChart);
 
